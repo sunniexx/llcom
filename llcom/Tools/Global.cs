@@ -5,6 +5,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using RestSharp;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
@@ -122,6 +123,7 @@ namespace llcom.Tools
         /// 是否有新版本？
         /// </summary>
         public static bool HasNewVersion { get; set; } = false;
+        public static byte[][] recvPara { get; set; } = null; // recvPara = [ uartPara, uartSendRaw ]
 
 
         /// <summary>

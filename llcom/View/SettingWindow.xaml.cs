@@ -1,6 +1,7 @@
 using ICSharpCode.AvalonEdit.Highlighting;
 using ICSharpCode.AvalonEdit.Highlighting.Xshd;
 using ICSharpCode.AvalonEdit.Search;
+using FontAwesome.WPF;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
@@ -37,6 +38,7 @@ namespace llcom
         //上次打开文件名
         private static string lastLuaFile = "";
         private static string lastLuaFileRev = "";
+
         /// <summary>
         /// 加载lua脚本文件
         /// </summary>
@@ -165,6 +167,8 @@ namespace llcom
             dataCheckComboBox.SelectedIndex = Tools.Global.setting.parity;
 
             showHexComboBox.DataContext = Tools.Global.setting;
+            //luaTestHexCheck.DataContext = Tools.Global.setting;
+            //luaTestHexCheckRev.DataContext = Tools.Global.setting;
 
             //快速搜索
             SearchPanel.Install(textEditor.TextArea);
@@ -182,8 +186,8 @@ namespace llcom
             }
             //加载上次打开的文件
             loadLuaFile(Tools.Global.setting.sendScript);
-            loadLuaFileRev(Tools.Global.setting.recvScript);
-
+            if(!string.IsNullOrEmpty(MainWindow.recvScriptBackup)) loadLuaFileRev(MainWindow.recvScriptBackup);
+            else loadLuaFileRev(Tools.Global.setting.recvScript);
             //加载编码
             var el = Encoding.GetEncodings();
             List<EncodingInfo> encodingList = new List<EncodingInfo>(el);
@@ -316,7 +320,8 @@ namespace llcom
                 {
                     byte[] r = LuaEnv.LuaLoader.Run($"{luaFileList.SelectedItem as string}.lua",
                                         new System.Collections.ArrayList{"uartData",
-                                           Tools.Global.GetEncoding().GetBytes(luaTestTextBox.Text)});
+                                            (bool)luaTestHexCheck.IsChecked ? Tools.Global.Hex2Byte(luaTestTextBox.Text) :
+                                            Tools.Global.GetEncoding().GetBytes(luaTestTextBox.Text)});
                     Tools.MessageBox.Show($"{TryFindResource("SettingLuaRunResult") as string ?? "?!"}\r\nHEX：" + Tools.Global.Byte2Hex(r) +
                         $"\r\n{TryFindResource("SettingLuaRawText") as string ?? "?!"}" + Tools.Global.Byte2Readable(r));
                 }
@@ -368,6 +373,7 @@ namespace llcom
                     saveLuaFileRev(lastLuaFileRev);
                 string fileName = luaFileListRev.SelectedItem as string;
                 loadLuaFileRev(fileName);
+                MainWindow.recvScriptBackup = fileName;
             }
         }
 
@@ -428,8 +434,11 @@ namespace llcom
                     byte[] r = LuaEnv.LuaLoader.Run(
                         $"{luaFileListRev.SelectedItem as string}.lua",
                         new System.Collections.ArrayList{
-                            "uartData",
-                            Tools.Global.GetEncoding().GetBytes(luaTestTextBoxRev.Text)
+                            "uartData", (bool)(luaTestHexCheckRev.IsChecked) ? 
+                            Tools.Global.Hex2Byte(luaTestTextBoxRev.Text) : 
+                            Tools.Global.GetEncoding().GetBytes(luaTestTextBoxRev.Text),
+                            "uartPara",
+                            Tools.Global.GetEncoding().GetBytes(luaTestParaTextBoxRev.Text)
                         },
                         "user_script_recv_convert/");
                     Tools.MessageBox.Show($"{TryFindResource("SettingLuaRunResult") as string ?? "?!"}\r\nHEX：" + Tools.Global.Byte2Hex(r) +

@@ -32,6 +32,13 @@ using ICSharpCode.AvalonEdit.Folding;
 using RestSharp;
 using System.Threading;
 using System.Windows.Interop;
+using System.Drawing;
+using ICSharpCode.AvalonEdit;
+using System.Runtime.InteropServices;
+using System.Windows.Controls.Primitives;
+using llcom.LuaEnv;
+using System.Web.UI.WebControls.WebParts;
+using Color = System.Windows.Media.Color;
 
 namespace llcom
 {
@@ -60,6 +67,7 @@ namespace llcom
         private bool forcusClosePort = true;
         private bool canSaveSendList = true;
         private bool isOpeningPort = false;
+        public static string recvScriptBackup = "";
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             //延迟启动，加快软件第一屏出现速度
@@ -268,14 +276,14 @@ namespace llcom
                         catch { }
                     }).Start();
 
-
                     Tools.Global.RefreshLuaScriptListEvent += (n, s) =>
                     {
                         this.Dispatcher.Invoke(() => RefreshScriptList());
                     };
-
                 }));
             });
+            recvScriptBackup = Tools.Global.setting.recvScript;
+            if (string.IsNullOrEmpty(recvScriptBackup)) recvScriptBackup = "default";
         }
 
         private bool DoInvoke(Action action)
@@ -324,6 +332,8 @@ namespace llcom
         }
 
         private bool refreshLock = false;
+        private bool skipSearch = false;
+        private int searchCount = 0;
         /// <summary>
         /// 刷新设备列表
         /// </summary>
@@ -334,13 +344,15 @@ namespace llcom
             refreshLock = true;
             serialPortsListComboBox.Items.Clear();
             List<string> strs = new List<string>();
+            searchCount = 0;
             Task.Run(() =>
             {
-                while(true)
+                while (!skipSearch)
+                //while (true)
                 {
                     try
                     {
-                        ManagementObjectSearcher searcher =new ManagementObjectSearcher("root\\CIMV2", "SELECT * FROM Win32_PnPEntity");
+                        ManagementObjectSearcher searcher = new ManagementObjectSearcher("root\\CIMV2", "SELECT * FROM Win32_PnPEntity");
                         Regex regExp = new Regex("\\(COM\\d+\\)");
                         foreach (ManagementObject queryObj in searcher.Get())
                         {
@@ -351,9 +363,13 @@ namespace llcom
                         }
                         break;
                     }
-                    catch
+                    catch(Exception ex) 
                     {
-                        Task.Delay(500).Wait();
+                        if (++searchCount >= 3) { 
+                            skipSearch = true;
+                            Tools.MessageBox.Show(ex.Message);
+                        }
+                        else Task.Delay(500).Wait();
                     }
                     //MessageBox.Show("fail了");
                 }
@@ -380,6 +396,7 @@ namespace llcom
                     }
                 }
                 catch{ }
+                finally { /*Tools.MessageBox.Show(String.Join("\n",SerialPort.GetPortNames()));*/ }
 
 
                 this.Dispatcher.Invoke(new Action(delegate {
@@ -763,7 +780,7 @@ namespace llcom
                         temp.Add(0x0a);
                         dataConvert = temp.ToArray();
                     }
-                    Tools.Global.uart.SendData(dataConvert);
+                    Tools.Global.uart.SendData(dataConvert, data);
                 }
                 catch(Exception ex)
                 {
@@ -775,7 +792,10 @@ namespace llcom
 
         private void SendUartData_Executed(object sender, ExecutedRoutedEventArgs e)
         {
-            sendUartData(Global.GetEncoding().GetBytes(toSendDataTextBox.Text));
+            Global.setting.recvScript = recvScriptBackup;
+            var data = Global.GetEncoding().GetBytes(toSendDataTextBox.Text);
+            Global.recvPara = [[], data];
+            sendUartData(data);
         }
 
         private void AddSendListButton_Click(object sender, RoutedEventArgs e)
@@ -795,17 +815,43 @@ namespace llcom
         private void knowSendDataButton_click(object sender, RoutedEventArgs e)
         {
             ToSendData data = ((Button)sender).Tag as ToSendData;
-            if (data.hex)
-                sendUartData(Tools.Global.Hex2Byte(data.text), true);
+
+            // 如果有指定接收脚本，则切换
+            if (!string.IsNullOrEmpty(data.recvScriptPath))
+            {
+                //检查文件是否存在
+                if (!File.Exists(Tools.Global.ProfilePath + $"user_script_recv_convert/{data.recvScriptPath}.lua"))
+                {
+                    Tools.Global.setting.recvScript = "default";
+                    data.recvScriptPath = "";
+                    if (!File.Exists(Tools.Global.ProfilePath + $"user_script_recv_convert/{Tools.Global.setting.recvScript}.lua"))
+                    {
+                        File.Create(Tools.Global.ProfilePath + $"user_script_recv_convert/{Tools.Global.setting.recvScript}.lua").Close();
+                    }
+                }
+                else
+                {
+                    Tools.Global.setting.recvScript = data.recvScriptPath;
+                }
+            }
             else
-                sendUartData(Global.GetEncoding().GetBytes(data.text), false);
+            {
+                Tools.Global.setting.recvScript = recvScriptBackup;
+            }
+
+            var sendData = data.hex ? Global.Hex2Byte(data.text) : Global.GetEncoding().GetBytes(data.text);
+            Global.recvPara = [Global.GetEncoding().GetBytes(data.recvScriptPara), sendData];
+            sendUartData(sendData, true);
         }
 
         private void Button_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
+            // 恢复原有的双击改名功能
             ToSendData data = ((Button)sender).Tag as ToSendData;
-            Tuple<bool, string> ret = Tools.InputDialog.OpenDialog(TryFindResource("QuickSendSetButton") as string ?? "?!",
-                data.commit, TryFindResource("QuickSendChangeButton") as string ?? "?!");
+            Tuple<bool, string> ret = Tools.InputDialog.OpenDialog(
+                TryFindResource("QuickSendSetButton") as string ?? "?!",
+                data.commit, 
+                TryFindResource("QuickSendChangeButton") as string ?? "?!");
             if(ret.Item1)
             {
                 ((Button)sender).Content = data.commit = ret.Item2;
@@ -1373,6 +1419,102 @@ namespace llcom
                     Tools.Global.uart.SendData(new byte[] { (byte)((int)e.Key - (int)Key.A + 1) });
                 }
                 catch { }
+        }
+
+        private void ScriptIcon_Click(object sender, MouseButtonEventArgs e)
+        {
+            // 点击📜图标时配置接收脚本
+            TextBlock icon = sender as TextBlock;
+            ToSendData data = icon.Tag as ToSendData;
+            recvScriptCombo.ItemsSource = Directory.GetFiles(Global.ProfilePath + "user_script_recv_convert", "*.lua")
+                                                   .Select(System.IO.Path.GetFileNameWithoutExtension).ToList();
+            recvScriptPopup.PlacementTarget = icon;
+            recvScriptCombo.Tag = data;
+            recvScriptCombo.SelectedItem = data.recvScriptPath ?? "";
+            recvScriptCombo.IsDropDownOpen = true;
+            recvScriptPopup.IsOpen = false;
+            recvScriptPopup.IsOpen = true;
+
+            // 打开对话框，选择接收脚本
+            //System.Windows.Forms.OpenFileDialog dialog = new System.Windows.Forms.OpenFileDialog();
+            //dialog.Filter = "Lua脚本文件 (*.lua)|*.lua|所有文件 (*.*)|*.*";
+            //dialog.InitialDirectory = System.IO.Path.Combine(Tools.Global.ProfilePath, "user_script_recv_convert");
+
+            //if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            //{
+            //    data.recvScriptPath = System.IO.Path.GetFileNameWithoutExtension(dialog.FileName);
+            //    //SaveSendList(null, EventArgs.Empty);
+            //}
+        }
+
+        private void ScriptIcon_RightClick(object sender, MouseButtonEventArgs e)
+        {
+            // 右击📜图标时清除接收脚本
+            TextBlock icon = sender as TextBlock;
+            ToSendData data = icon.Tag as ToSendData;
+
+            // 清除接收脚本项
+            if (!string.IsNullOrEmpty(data.recvScriptPath))
+            {
+                data.recvScriptPath = "";
+                //SaveSendList(null, EventArgs.Empty);
+            }
+        }
+
+        private void recvScriptCombo_DropDownClosed(object sender, EventArgs e)
+        {
+            ComboBox me = sender as ComboBox;
+            ToSendData data = me.Tag as ToSendData;
+            string newItem = me.SelectedItem as string;
+            if(data.recvScriptPath != newItem) data.recvScriptPath = newItem;
+            recvScriptPopup.IsOpen = false;
+            me.SelectedItem = null;
+        }
+
+        [DllImport("user32")]
+        public static extern IntPtr SetFocus(IntPtr hWnd);
+        private async void ScriptParaIcon_Click(object sender, MouseButtonEventArgs e)
+        {
+            TextBlock icon = sender as TextBlock;
+            ToSendData data = icon.Tag as ToSendData;
+
+            recvScriptParaBox.Tag = data;
+            recvScriptParaBox.Text = data.recvScriptPara;
+            recvScriptParaBox.ScrollToEnd();
+            recvScriptParaPopup.PlacementTarget = icon;
+            recvScriptParaPopup.IsOpen = false;
+            await Task.Yield();
+            recvScriptParaPopup.IsOpen = true;
+            await Task.Yield();
+            var source = (HwndSource)PresentationSource.FromVisual(recvScriptParaPopup.Child);
+            SetFocus(source.Handle);
+            await Task.Yield();
+            Keyboard.Focus(recvScriptParaBox);
+        }
+        private void ScriptParaIcon_RightClick(object sender, MouseButtonEventArgs e)
+        {
+            TextBlock icon = sender as TextBlock;
+            ToSendData data = icon.Tag as ToSendData;
+
+            if (!string.IsNullOrEmpty(data.recvScriptPara))
+            {
+                data.recvScriptPara = "";
+                //SaveSendList(null, EventArgs.Empty);
+            }
+        }
+        private void ScriptParaConfirm_Click(object sender, MouseButtonEventArgs e)
+        {
+            TextBlock icon = sender as TextBlock;
+            TextEditor t = icon.Tag as TextEditor;
+            ToSendData data = t.Tag as ToSendData;
+
+            data.recvScriptPara = t.Text;
+            //SaveSendList(null, EventArgs.Empty);
+            recvScriptParaPopup.IsOpen = false;
+        }
+        private void ScriptParaCancel_Click(object sender, MouseButtonEventArgs e)
+        {
+            recvScriptParaPopup.IsOpen = false;
         }
     }
 }

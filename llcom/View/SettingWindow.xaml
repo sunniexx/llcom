@@ -6,6 +6,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:fa="http://schemas.fontawesome.io/icons/"
     xmlns:local="clr-namespace:llcom"
+    xmlns:local_page="clr-namespace:llcom.Pages"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     Title="{DynamicResource SettingTitle}"
     Width="450"
@@ -18,6 +19,9 @@
     <Window.Style>
         <Style BasedOn="{StaticResource {x:Type Window}}" TargetType="Window" />
     </Window.Style>
+    <Window.Resources>
+        <local_page:boolVisibe x:Key="boolVisibeConverter" />
+    </Window.Resources>
     <Grid>
         <TabControl>
             <TabItem Header="{DynamicResource SettingBasic}">
@@ -47,6 +51,10 @@
                             Margin="5"
                             Content="{DynamicResource SettingShowSend}"
                             IsChecked="{Binding showSend}" />
+                        <CheckBox
+                            Margin="5"
+                            Content="{DynamicResource SettingShowSendRaw}"
+                            IsChecked="{Binding showSendRaw}" />
                         <CheckBox
                             Margin="5"
                             Content="{DynamicResource SettingKeepTop}"
@@ -198,8 +206,14 @@
                         <TextBlock VerticalAlignment="Center" Text="{DynamicResource SettingLuaTestInput}" />
                         <TextBox
                             Name="luaTestTextBox"
-                            Width="150"
+                            Margin="3,0,0,0"
+                            Width="155"
                             Text="uart data" />
+                        <CheckBox
+                            Name="luaTestHexCheck"
+                            Margin="3,0,0,0"
+                            Content="HEX"
+                            IsChecked="{Binding luaTestHex}"/>
                         <Button
                             Name="luaTestbutton"
                             Margin="3,0,0,0"
@@ -315,38 +329,58 @@
                             <fa:FontAwesome Foreground="Red" Icon="Ban" />
                         </Button>
                     </WrapPanel>
-                    <WrapPanel
-                        Name="luaTestWrapPanelRev"
-                        Grid.Row="1"
-                        Margin="3"
-                        Visibility="Collapsed">
-                        <TextBlock VerticalAlignment="Center" Text="{DynamicResource SettingLuaTestInput}" />
-                        <TextBox
-                            Name="luaTestTextBoxRev"
-                            Width="150"
-                            Text="uart data" />
-                        <Button
-                            Name="luaTestbuttonRev"
-                            Margin="3,0,0,0"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Click="luaTestbuttonRev_Click"
-                            ToolTip="{DynamicResource SettingLuaTestButton}">
-                            <Grid>
-                                <fa:FontAwesome Foreground="LightBlue" Icon="PaperPlane" />
-                                <fa:FontAwesome Foreground="Black" Icon="PaperPlaneOutline" />
-                            </Grid>
-                        </Button>
-                        <Button
-                            Name="luaTestCancelbuttonRev"
-                            Margin="3,0,0,0"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Click="luaTestCancelbuttonRev_Click"
-                            ToolTip="{DynamicResource LuaCancel}">
-                            <fa:FontAwesome Foreground="Red" Icon="Ban" />
-                        </Button>
-                    </WrapPanel>
+                    <Grid Grid.Row="1" Visibility="{Binding ElementName=luaTestWrapPanelRev, Path=Visibility}">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="auto" />
+                            <RowDefinition Height="auto" />
+                        </Grid.RowDefinitions>
+                        <WrapPanel
+                            Name="luaTestWrapPanelRev"
+                            Grid.Row="0"
+                            Margin="3"
+                            Visibility="Collapsed">
+                            <TextBlock VerticalAlignment="Center" Text="{DynamicResource SettingLuaTestInput}" />
+                            <TextBox
+                                Name="luaTestTextBoxRev"
+                                Margin="3,0,0,0"
+                                Width="155"
+                                Text="uart data" />
+                            <CheckBox
+                                Name="luaTestHexCheckRev"
+                                Margin="3,0,0,0"
+                                Content="HEX"
+                                IsChecked="{Binding luaTestHexRev}"/>
+                            <Button
+                                Name="luaTestbuttonRev"
+                                Margin="3,0,0,0"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Click="luaTestbuttonRev_Click"
+                                ToolTip="{DynamicResource SettingLuaTestButton}">
+                                <Grid>
+                                    <fa:FontAwesome Foreground="LightBlue" Icon="PaperPlane" />
+                                    <fa:FontAwesome Foreground="Black" Icon="PaperPlaneOutline" />
+                                </Grid>
+                            </Button>
+                            <Button
+                                Name="luaTestCancelbuttonRev"
+                                Margin="3,0,0,0"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Click="luaTestCancelbuttonRev_Click"
+                                ToolTip="{DynamicResource LuaCancel}">
+                                <fa:FontAwesome Foreground="Red" Icon="Ban" />
+                            </Button>
+                        </WrapPanel>
+                        <WrapPanel 
+                            Grid.Row="1" 
+                            Margin="3"
+                            Orientation="Horizontal" 
+                            Visibility="{Binding ElementName=luaTestWrapPanelRev, Path=Visibility}">
+                            <TextBlock VerticalAlignment="Center" Text="{DynamicResource SettingLuaTestPara}"/>
+                            <TextBox Name="luaTestParaTextBoxRev" Margin="3,0,0,0" Width="300"/>
+                        </WrapPanel>
+                    </Grid>
                     <avalonEdit:TextEditor
                         xmlns:avalonEdit="http://icsharpcode.net/sharpdevelop/avalonedit"
                         Name="textEditorRev"
@@ -356,7 +390,7 @@
                         LostFocus="textEditorRev_LostFocus"
                         ShowLineNumbers="True" />
                     <WrapPanel Grid.Row="3" Margin="5">
-                        <TextBlock Text="{DynamicResource SettingLuaText1}" TextWrapping="Wrap" />
+                        <TextBlock Text="{DynamicResource SettingLuaText1Recv}" TextWrapping="Wrap" />
                         <TextBlock Text="{DynamicResource SettingLuaText2Recv}" TextWrapping="Wrap" />
                         <TextBlock Text="{DynamicResource SettingLuaText3}" TextWrapping="Wrap" />
                     </WrapPanel>

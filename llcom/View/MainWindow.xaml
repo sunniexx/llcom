@@ -7,6 +7,7 @@
     xmlns:fa="http://schemas.fontawesome.io/icons/"
     xmlns:local="clr-namespace:llcom"
     xmlns:local_page="clr-namespace:llcom.Pages"
+    xmlns:local_tool="clr-namespace:llcom.Tools"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     Title="{DynamicResource AppTitle}"
     Width="900"
@@ -24,6 +25,9 @@
         <RoutedUICommand x:Key="SendUartData" Text="SendUartData" />
         <local_page:boolVisibe x:Key="boolVisibeConverter" />
         <local_page:boolNotVisibe x:Key="boolNotVisibeConverter" />
+        <local_page:rsTooltip x:Key="rsToolTipConverter" />
+        <local_page:rsOpacity x:Key="rsOpacityConverter" />
+        <local_page:boolOpacity x:Key="boolOpacityConverter" />
     </Window.Resources>
     <Window.InputBindings>
         <KeyBinding
@@ -346,6 +350,8 @@
                                                 <ColumnDefinition Width="4*" />
                                                 <ColumnDefinition Width="auto" />
                                                 <ColumnDefinition Width="20" />
+                                                <ColumnDefinition Width="25" />
+                                                <ColumnDefinition Width="25" />
                                             </Grid.ColumnDefinitions>
                                             <Grid
                                                 Margin="1"
@@ -381,6 +387,57 @@
                                                 Margin="2"
                                                 HorizontalAlignment="Center"
                                                 IsChecked="{Binding hex}" />
+                                            <TextBlock
+                                                Name="recvScriptSet"
+                                                Grid.Column="4"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"
+                                                Opacity="{Binding recvScriptPath, Converter={StaticResource rsOpacityConverter}}"
+                                                MouseLeftButtonDown="ScriptIcon_Click"
+                                                MouseRightButtonDown="ScriptIcon_RightClick"
+                                                Tag="{Binding}">
+                                                <fa:FontAwesome Foreground="DimGray" Icon="FileText">
+                                                    <fa:FontAwesome.Style>
+                                                        <Style TargetType="fa:FontAwesome">
+                                                            <Setter Property="FontSize" Value="16"/>
+                                                            <Style.Triggers>
+                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                    <Setter Property="FontSize" Value="20"/>
+                                                                </Trigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </fa:FontAwesome.Style>
+                                                </fa:FontAwesome>
+                                                <TextBlock.ToolTip>
+                                                    <MultiBinding Converter="{StaticResource rsToolTipConverter}">
+                                                        <Binding Path="recvScriptPath" UpdateSourceTrigger="PropertyChanged"/>
+                                                        <Binding ElementName="sendDataButton" Path="Content" UpdateSourceTrigger="PropertyChanged" Delay="1000"/>
+                                                    </MultiBinding>
+                                                </TextBlock.ToolTip>
+                                            </TextBlock>
+                                            <TextBlock
+                                                Name="recvScriptPara"
+                                                Grid.Column="5"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"
+                                                Opacity="{Binding recvScriptPara, Converter={StaticResource rsOpacityConverter}}"
+                                                MouseLeftButtonUp="ScriptParaIcon_Click"
+                                                MouseRightButtonDown="ScriptParaIcon_RightClick"
+                                                Tag="{Binding}"
+                                                ToolTip="{DynamicResource QuickSendRecvScriptParaSet}">
+                                                <fa:FontAwesome Foreground="DimGray" Icon="Cog">
+                                                    <fa:FontAwesome.Style>
+                                                        <Style TargetType="fa:FontAwesome">
+                                                            <Setter Property="FontSize" Value="18"/>
+                                                            <Style.Triggers>
+                                                                <Trigger Property="IsMouseOver" Value="True">
+                                                                    <Setter Property="FontSize" Value="22"/>
+                                                                </Trigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </fa:FontAwesome.Style>
+                                                </fa:FontAwesome>
+                                            </TextBlock>
                                         </Grid>
                                         <ControlTemplate.Triggers>
                                             <Trigger Property="IsMouseOver" Value="true">
@@ -400,7 +457,9 @@
                             <ColumnDefinition Width="30" />
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="40" />
-                            <ColumnDefinition Width="auto" />
+                            <ColumnDefinition Width="22" />
+                            <ColumnDefinition Width="25" />
+                            <ColumnDefinition Width="25" />
                         </Grid.ColumnDefinitions>
                         <StackPanel
                             Name="QuickListNameStackPanel"
@@ -427,6 +486,14 @@
                             Grid.Column="3"
                             HorizontalAlignment="Center"
                             Text="{DynamicResource QuickSendHex}" />
+                        <TextBlock
+                            Grid.Column="4"
+                            HorizontalAlignment="Center"
+                            Text="{DynamicResource QuickSendRecvScript}" />
+                        <TextBlock
+                            Grid.Column="5"
+                            HorizontalAlignment="Center"
+                            Text="{DynamicResource QuickSendRecvScriptPara}" />
                     </Grid>
                     <ListBox
                         Name="toSendList"
@@ -438,6 +505,56 @@
                         VirtualizingPanel.CacheLengthUnit="Page"
                         VirtualizingPanel.IsVirtualizing="True"
                         VirtualizingPanel.VirtualizationMode="Recycling" />
+                    <Popup Name="recvScriptPopup" Placement="Bottom" VerticalOffset="5" StaysOpen="True">
+                        <ComboBox Name="recvScriptCombo" Width="250" DropDownClosed="recvScriptCombo_DropDownClosed"/>
+                    </Popup>
+                    <Popup Name="recvScriptParaPopup" Placement="Bottom" VerticalOffset="5" StaysOpen="False">
+                        <Grid Background="White">
+                            <Border BorderBrush="DarkGray" BorderThickness="1">
+                                <avalonEdit:TextEditor
+                                    xmlns:avalonEdit="http://icsharpcode.net/sharpdevelop/avalonedit"
+                                    Name="recvScriptParaBox" 
+                                    Margin="3"
+                                    Width="250" Height="100" 
+                                    WordWrap="True"
+                                    HorizontalContentAlignment="Left"
+                                    VerticalContentAlignment="Top"
+                                    VerticalScrollBarVisibility="Visible"/>
+                            </Border>
+                            <Grid HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,1,3,0" Background="Transparent">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Name="rsParaConfirm" Grid.Column="0" Tag="{Binding ElementName=recvScriptParaBox}" MouseLeftButtonUp="ScriptParaConfirm_Click">
+                                    <fa:FontAwesome Icon="Check" Foreground="Green" FontSize="18"/>
+                                    <TextBlock.Style>
+                                        <Style TargetType="{x:Type TextBlock}">
+                                            <Setter Property="Opacity" Value="0.25"/>
+                                            <Style.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter Property="Opacity" Value="0.8"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                                <TextBlock Name="rsParaCancel" Grid.Column="1" MouseLeftButtonUp="ScriptParaCancel_Click">
+                                    <fa:FontAwesome Icon="Times" Foreground="Red" FontSize="18"/>
+                                    <TextBlock.Style>
+                                        <Style TargetType="{x:Type TextBlock}">
+                                            <Setter Property="Opacity" Value="0.25"/>
+                                            <Style.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter Property="Opacity" Value="0.8"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Grid>
+                        </Grid>
+                    </Popup>
                     <StackPanel Grid.Row="2">
                         <Grid Margin="0,10,0,0">
                             <Grid.ColumnDefinitions>
@@ -724,7 +841,6 @@
                     Tag="en-US" />
             </MenuItem>
         </Menu>
-
 
         <!--  统计  -->
         <WebBrowser Name="TongjiWebBrowser" Visibility="Collapsed" />

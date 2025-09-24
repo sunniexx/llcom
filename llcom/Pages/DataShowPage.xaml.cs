@@ -3,6 +3,7 @@ using ScottPlot.Drawing.Colormaps;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -11,6 +12,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Documents;
+using System.Windows.Forms;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
@@ -90,7 +92,7 @@ namespace llcom.Pages
             }
 
             //如果不开回显，就别打印
-            if(!Tools.Global.setting.showSend && e is DataShowPara para && para.send)
+            if(!Tools.Global.setting.showSend && !Tools.Global.setting.showSendRaw && e is DataShowPara para && para.send)
                 return;
 
             //显示到列表
@@ -196,7 +198,7 @@ namespace llcom.Pages
                     {
                         temp = LuaEnv.LuaLoader.Run(
                             $"{Tools.Global.setting.recvScript}.lua",
-                            new System.Collections.ArrayList { "uartData", temp },
+                            new System.Collections.ArrayList { "uartData", temp , "uartPara", Global.recvPara[0], "uartSendRaw", Global.recvPara[1] },
                             "user_script_recv_convert/");
                     }
                     catch (Exception ex)
@@ -251,6 +253,38 @@ namespace llcom.Pages
                 RawTitle = title;
                 RawTextColor = color;
                 HexTextColor = color;
+            }
+        }
+
+        private void SaveLogButton_Click(object sender, RoutedEventArgs e)
+        {
+            SaveFileDialog saveFileDialog = new SaveFileDialog();
+            saveFileDialog.Filter = "Log files(*.log)|*.log";
+            if(saveFileDialog.ShowDialog() == DialogResult.OK)
+            {
+                string saveFilePath = saveFileDialog.FileName;
+                var needPack = Tools.Global.setting.timeout >= 0;
+                FileStream fs = new FileStream(saveFilePath, FileMode.Create);
+                StreamWriter sw = new StreamWriter(fs, Encoding.UTF8);
+                if (!needPack)
+                {
+                    sw.Write(MainTextBox.Text);
+                }
+                else
+                {
+                    int iCount = MainList.Items.Count - 1;
+                    for (int i = 0; i <= iCount; i++)
+                    {
+                        var item = MainList.Items[i] as DataShow;
+                        if (string.IsNullOrEmpty(item.RawTitle))
+                            sw.WriteLine(item.TimeText + (item.ArrowText == " ← " ? " [send] " : " [recv] ") + item.DataText);
+                        else
+                            sw.WriteLine(item.TimeText + " [" + item.RawTitle + "] " + item.RawText);
+                    }
+                }
+                sw.Flush();
+                sw.Close();
+                fs.Close();
             }
         }
     }

@@ -195,13 +195,14 @@ namespace llcom.Model
         /// 发送数据
         /// </summary>
         /// <param name="data">数据内容</param>
-        public void SendData(byte[] data)
+        public void SendData(byte[] data, byte[] dataRaw = null)
         {
             if (data.Length == 0)
                 return;
             serial.Write(data, 0, data.Length);
             Tools.Global.setting.SentCount += data.Length;
-            UartDataSent(data, EventArgs.Empty);//回调
+            if(dataRaw != null && Tools.Global.setting.showSendRaw) UartDataSent(dataRaw, EventArgs.Empty);
+            if(Tools.Global.setting.showSend) UartDataSent(data, EventArgs.Empty);//回调
         }
 
         //收到串口事件的信号量

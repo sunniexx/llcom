@@ -21,6 +21,7 @@ namespace llcom.Model
         private int _showHexFormat = 0;
         private bool _hexSend = false;
         private bool _showSend = true;
+        private bool _showSendRaw = true;
         private int _parity = 0;
         private int _timeout = 50;
         private int _dataBits = 8;
@@ -255,6 +256,19 @@ namespace llcom.Model
             set
             {
                 _showSend = value;
+                Save();
+            }
+        }
+
+        public bool showSendRaw
+        {
+            get
+            {
+                return _showSendRaw;
+            }
+            set
+            {
+                _showSendRaw = value;
                 Save();
             }
         }
@@ -603,5 +617,10 @@ namespace llcom.Model
 
         private int _udpServerPort = 2333;
         public int udpServerPort { get { return _udpServerPort; } set { _udpServerPort = value; Save(); } }
+
+        private bool _luaTestHex = false;
+        private bool _luaTestHexRev = false;
+        public bool luaTestHex { get { return _luaTestHex; } set { _luaTestHex = value; Save(); } }
+        public bool luaTestHexRev { get { return _luaTestHexRev; } set { _luaTestHexRev = value; Save(); } }
     }
 }

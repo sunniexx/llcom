@@ -1,4 +1,5 @@
 <ResourceDictionary
+    xml:space="preserve"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:system="clr-namespace:System;assembly=mscorlib">
@@ -28,12 +29,17 @@
     <system:String x:Key="QuickSendCard">Quick send</system:String>
     <system:String x:Key="QuickSendId">ID</system:String>
     <system:String x:Key="QuickSendContent">Content</system:String>
-    <system:String x:Key="QuickSendHex">HEX</system:String>
+    <system:String x:Key="QuickSendHex">Hex</system:String>
+    <system:String x:Key="QuickSendRecvScript">Rcvs</system:String>
+    <system:String x:Key="QuickSendRecvScriptPara">Para</system:String>
     <system:String x:Key="QuickSendButtonTip">Right click to change Button Content.</system:String>
     <system:String x:Key="QuickSendIdTip">Right click id to change the index of this line.</system:String>
     <system:String x:Key="QuickSendListNameTip">Right click id to change this quick send list name</system:String>
     <system:String x:Key="QuickSendListNameChangeTip">change this quick send list name</system:String>
     <system:String x:Key="QuickSendButton">Send</system:String>
+    <system:String x:Key="QuickSendRecvScriptNil">No receive script&#10;Left click to set script</system:String>
+    <system:String x:Key="QuickSendRecvScriptShow">Current receive script is: [{0}]&#10;Right click to clear the script</system:String>
+    <system:String x:Key="QuickSendRecvScriptParaSet">Left click to set script parameter&#10;Right click to clear the script parameter</system:String>
     <system:String x:Key="QuickSendAdd">Add new</system:String>
     <system:String x:Key="QuickSendRemoveLast">Remove last one</system:String>
     <system:String x:Key="QuickSendTip">Lua script for data to send, also influence the data here</system:String>
@@ -97,6 +103,7 @@
     <system:String x:Key="SettingShoText">Only Text</system:String>
     <system:String x:Key="SettingShowHexOnly">Only Hex</system:String>
     <system:String x:Key="SettingShowSend">Show data you sent</system:String>
+    <system:String x:Key="SettingShowSendRaw">Show raw data you sent</system:String>
     <system:String x:Key="SettingKeepTop">Keep Window on top</system:String>
     <system:String x:Key="SettingUartTimeout">Data pack time:</system:String>
     <system:String x:Key="SettingMs">Ms(minus means Not Pack Mode)</system:String>
@@ -124,8 +131,10 @@
     <system:String x:Key="SettingRecvLuaScript">Lua script for received data</system:String>
     <system:String x:Key="SettingLuaTestScript">Test script</system:String>
     <system:String x:Key="SettingLuaTestInput">Data to test:</system:String>
+    <system:String x:Key="SettingLuaTestPara">parameter:</system:String>
     <system:String x:Key="SettingLuaTestButton">Test data</system:String>
     <system:String x:Key="SettingLuaText1">'uartData' is received data, you can return your own result.</system:String>
+    <system:String x:Key="SettingLuaText1Recv">'uartData' is received data, you can return your own result.&#10;'uartPara' is parameter, 'uartSendRaw' is string before send script.</system:String>
     <system:String x:Key="SettingLuaText2">This script won't change your data of sent by automatic script.</system:String>
     <system:String x:Key="SettingLuaText2Recv">This script won't change your data in your own lua script which got from data receive api.</system:String>
     <system:String x:Key="SettingLuaText3">Click api reference button to see api reference.</system:String>

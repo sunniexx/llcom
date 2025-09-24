@@ -1,18 +1,23 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace llcom.Model
 {
-    public class ToSendData
+    public class ToSendData : INotifyPropertyChanged
     {
         public static event EventHandler DataChanged;
+        public event PropertyChangedEventHandler PropertyChanged;
+
         private int _id;
         private string _text;
         private bool _hex;
         private string _commit;
+        private string _recvScriptPath = "";
+        private string _recvScriptPara = "";
         public int id
         {
             get
@@ -61,6 +66,29 @@ namespace llcom.Model
                 _commit = value;
                 DataChanged?.Invoke(0, EventArgs.Empty);
             }
+        }
+
+        public string recvScriptPath
+        {
+            get
+            {
+                return _recvScriptPath;
+            }
+            set
+            {
+                _recvScriptPath = value;
+                DataChanged?.Invoke(0, EventArgs.Empty);
+                OnPropertyChanged(nameof(recvScriptPath));
+            }
+        }
+
+        public string recvScriptPara {
+            get { return _recvScriptPara; }
+            set { _recvScriptPara = value; DataChanged?.Invoke(0, EventArgs.Empty); OnPropertyChanged(nameof(recvScriptPara)); } }
+
+        protected void OnPropertyChanged(string propertyName)
+        {
+            this.PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
 }

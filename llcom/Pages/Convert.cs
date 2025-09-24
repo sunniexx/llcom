@@ -14,6 +14,59 @@ namespace llcom.Pages
     }
 
     /// <summary>
+    /// bool正向设置透明度
+    /// </summary>
+    [ValueConversion(typeof(bool), typeof(float))]
+    public class boolOpacity : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            return (bool)value ? 1.0 : 0.25;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    /// <summary>
+    /// 根据recvScript切换Opacity
+    /// </summary>
+    [ValueConversion(typeof(string), typeof(float))]
+    public class rsOpacity : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            return string.IsNullOrEmpty(value as string) ? 0.25 : 1.0;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) =>
+            throw new NotImplementedException();
+    }
+
+    /// <summary>
+    /// 根据recvScript切换Tooltip
+    /// </summary>
+    [ValueConversion(typeof(string[]), typeof(string))]
+    public class rsTooltip : IMultiValueConverter
+    {
+        public object Convert(object[] value, Type targetType, object parameter, CultureInfo culture)
+        {
+            string rs = value[0] as string;
+            string t = value[1] as string;
+            ResourceDictionary r = App.Current.Resources;
+            if (string.IsNullOrEmpty(rs)) return r["QuickSendRecvScriptNil"];
+            else return string.Format(r["QuickSendRecvScriptShow"] as string, rs);
+        }
+
+        object[] IMultiValueConverter.ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    /// <summary>
     /// bool正向显示隐藏
     /// </summary>
     [ValueConversion(typeof(bool), typeof(Visibility))]

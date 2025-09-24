@@ -59,7 +59,7 @@ namespace llcom.Tools
                     encoding: Encoding.UTF8,
                     rollOnFileSizeLimit: true)
                 .CreateLogger();
-            AddUartLogInfo("[SRART]Logs by LLCOM. https://github.com/chenxuuu/llcom");
+            AddUartLogInfo("[START]Logs by LLCOM. https://github.com/chenxuuu/llcom");
         }
 
         public static void CloseUartLog()
@@ -150,4 +150,5 @@ namespace llcom.Tools
         public string title;
         public SolidColorBrush color;
     }
+    class DataShowSendRaw : DataShow { }
 }
